@@ -1,0 +1,43 @@
+oauth:3
+authentication:3
+identity:2
+biometric:2
+
+api:2
+sdk:2
+token:2
+session:2
+
+bank:3
+banking:3
+fintech:2
+payment:2
+transaction:2
+psd2:2
+
+fraud:3
+money laundering:3
+phishing:2
+scam:2
+
+malware:2
+ransomware:2
+trojan:2
+botnet:2
+
+breach:3
+data leak:3
+data exposure:3
+vulnerability:2
+exploit:2
+zero-day:3
+
+supply chain:3
+third party:2
+dependency:2
+library:2
+
+cloud:1
+aws:1
+kubernetes:1
+docker:1

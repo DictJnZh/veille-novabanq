@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaBanq Cyber Threat Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 30px;
+      color: #1f2937;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      margin-bottom: 30px;
+      color: #6b7280;
+    }
+
+    .stats {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .stat-box {
+      background: white;
+      padding: 16px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      min-width: 180px;
+    }
+
+    .stat-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .stat-box p {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .section h2 {
+      margin-top: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-left: 8px solid #d1d5db;
+    }
+
+    .card.high {
+      border-left-color: #c62828;
+    }
+
+    .card.medium {
+      border-left-color: #ef6c00;
+    }
+
+    .card.low {
+      border-left-color: #2e7d32;
+    }
+
+    .criticality {
+      font-weight: bold;
+    }
+
+    .criticality.high {
+      color: #c62828;
+    }
+
+    .criticality.medium {
+      color: #ef6c00;
+    }
+
+    .criticality.low {
+      color: #2e7d32;
+    }
+
+    .tag-list {
+      margin-top: 8px;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #e5e7eb;
+      color: #374151;
+      padding: 5px 10px;
+      margin: 4px 6px 0 0;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .empty {
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      color: #6b7280;
+    }
+
+    canvas {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>NovaBanq Cyber Threat Dashboard</h1>
+  <div class="subtitle">Visualisation des résultats de la veille cyber</div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <h3>Total des menaces détectées</h3>
+      <p id="totalCount">0</p>
+    </div>
+    <div class="stat-box">
+      <h3>Criticité élevée</h3>
+      <p id="highCount">0</p>
+    </div>
+    <div class="stat-box">
+      <h3>Criticité moyenne</h3>
+      <p id="mediumCount">0</p>
+    </div>
+    <div class="stat-box">
+      <h3>Criticité faible</h3>
+      <p id="lowCount">0</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Répartition des criticités</h2>
+    <canvas id="threatChart"></canvas>
+  </div>
+
+  <div class="section">
+    <h2>Top menaces détectées</h2>
+    <div id="articles"></div>
+  </div>
+
+  <script>
+    function getCssClass(criticality) {
+      if (criticality === "Élevée") return "high";
+      if (criticality === "Moyenne") return "medium";
+      return "low";
+    }
+
+    fetch("reports/report.json")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Impossible de charger reports/report.json");
+        }
+        return response.json();
+      })
+      .then(data => {
+        let high = 0;
+        let medium = 0;
+        let low = 0;
+
+        data.forEach(item => {
+          if (item.criticality === "Élevée") high++;
+          else if (item.criticality === "Moyenne") medium++;
+          else low++;
+        });
+
+        document.getElementById("totalCount").textContent = data.length;
+        document.getElementById("highCount").textContent = high;
+        document.getElementById("mediumCount").textContent = medium;
+        document.getElementById("lowCount").textContent = low;
+
+        new Chart(document.getElementById("threatChart"), {
+          type: "bar",
+          data: {
+            labels: ["Élevée", "Moyenne", "Faible"],
+            datasets: [{
+              label: "Nombre de menaces",
+              data: [high, medium, low]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0
+                }
+              }
+            }
+          }
+        });
+
+        const container = document.getElementById("articles");
+
+        if (!data.length) {
+          container.innerHTML = `<div class="empty">Aucune menace détectée dans le rapport.</div>`;
+          return;
+        }
+
+        data.slice(0, 10).forEach(article => {
+          const cssClass = getCssClass(article.criticality);
+          const keywords = Array.isArray(article.keywords) ? article.keywords : [];
+
+          const tagsHtml = keywords.map(keyword =>
+            `<span class="tag">${keyword}</span>`
+          ).join("");
+
+          container.innerHTML += `
+            <div class="card ${cssClass}">
+              <h3>${article.title || "Sans titre"}</h3>
+              <p><strong>Score :</strong> ${article.score ?? 0}</p>
+              <p class="criticality ${cssClass}">
+                <strong>Criticité :</strong> ${article.criticality || "Inconnue"}
+              </p>
+              <p><strong>Lien :</strong> <a href="${article.link}" target="_blank" rel="noopener noreferrer">Ouvrir l'article</a></p>
+              <div class="tag-list">
+                <strong>Mots-clés détectés :</strong><br>
+                ${tagsHtml || "<span class='tag'>Aucun</span>"}
+              </div>
+            </div>
+          `;
+        });
+      })
+      .catch(error => {
+        document.getElementById("articles").innerHTML = `
+          <div class="empty">
+            Erreur lors du chargement du dashboard : ${error.message}
+          </div>
+        `;
+      });
+  </script>
+</body>
+</html>

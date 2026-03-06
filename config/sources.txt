@@ -1,0 +1,10 @@
+https://www.cert.ssi.gouv.fr/feed/
+https://www.cisa.gov/news.xml
+https://www.bleepingcomputer.com/feed/
+https://thehackernews.com/feeds/posts/default
+https://feeds.feedburner.com/TheHackersNews
+https://www.darkreading.com/rss.xml
+https://krebsonsecurity.com/feed/
+https://securityaffairs.com/feed
+https://www.schneier.com/feed/atom
+https://feeds.arstechnica.com/arstechnica/security
