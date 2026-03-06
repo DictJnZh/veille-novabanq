@@ -1,269 +1,214 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NovaBanq Cyber Threat Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<title>NovaBanq Threat Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 30px;
-      color: #1f2937;
-    }
+<style>
 
-    h1 {
-      margin-bottom: 10px;
-    }
+body{
+font-family: Arial;
+background:#f5f6fa;
+padding:40px;
+}
 
-    .subtitle {
-      margin-bottom: 30px;
-      color: #6b7280;
-    }
+h1{
+margin-bottom:10px;
+}
 
-    .stats {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 25px;
-    }
+.subtitle{
+color:#666;
+margin-bottom:25px;
+}
 
-    .stat-box {
-      background: white;
-      padding: 16px 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      min-width: 180px;
-    }
+button{
+padding:10px 18px;
+margin:5px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
 
-    .stat-box h3 {
-      margin: 0 0 8px 0;
-      font-size: 14px;
-      color: #6b7280;
-    }
+.btn-all{background:#333;color:white;}
+.btn-critical{background:#6a1b9a;color:white;}
+.btn-high{background:#c62828;color:white;}
+.btn-medium{background:#ef6c00;color:white;}
+.btn-low{background:#2e7d32;color:white;}
 
-    .stat-box p {
-      margin: 0;
-      font-size: 24px;
-      font-weight: bold;
-    }
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+border-left:6px solid #ddd;
+}
 
-    .section {
-      background: white;
-      padding: 20px;
-      margin-bottom: 25px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
+.card.critique{border-left-color:#6a1b9a;}
+.card.high{border-left-color:#c62828;}
+.card.medium{border-left-color:#ef6c00;}
+.card.low{border-left-color:#2e7d32;}
 
-    .section h2 {
-      margin-top: 0;
-    }
+.tag{
+background:#eee;
+padding:3px 8px;
+margin-right:5px;
+border-radius:12px;
+font-size:12px;
+}
 
-    .card {
-      background: white;
-      padding: 20px;
-      margin-bottom: 18px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      border-left: 8px solid #d1d5db;
-    }
-
-    .card.high {
-      border-left-color: #c62828;
-    }
-
-    .card.medium {
-      border-left-color: #ef6c00;
-    }
-
-    .card.low {
-      border-left-color: #2e7d32;
-    }
-
-    .criticality {
-      font-weight: bold;
-    }
-
-    .criticality.high {
-      color: #c62828;
-    }
-
-    .criticality.medium {
-      color: #ef6c00;
-    }
-
-    .criticality.low {
-      color: #2e7d32;
-    }
-
-    .tag-list {
-      margin-top: 8px;
-    }
-
-    .tag {
-      display: inline-block;
-      background: #e5e7eb;
-      color: #374151;
-      padding: 5px 10px;
-      margin: 4px 6px 0 0;
-      border-radius: 20px;
-      font-size: 12px;
-    }
-
-    a {
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .empty {
-      padding: 20px;
-      background: #fff;
-      border-radius: 10px;
-      color: #6b7280;
-    }
-
-    canvas {
-      max-width: 100%;
-    }
-  </style>
+</style>
 </head>
+
 <body>
-  <h1>NovaBanq Cyber Threat Dashboard</h1>
-  <div class="subtitle">Visualisation des résultats de la veille cyber</div>
 
-  <div class="stats">
-    <div class="stat-box">
-      <h3>Total des menaces détectées</h3>
-      <p id="totalCount">0</p>
-    </div>
-    <div class="stat-box">
-      <h3>Criticité élevée</h3>
-      <p id="highCount">0</p>
-    </div>
-    <div class="stat-box">
-      <h3>Criticité moyenne</h3>
-      <p id="mediumCount">0</p>
-    </div>
-    <div class="stat-box">
-      <h3>Criticité faible</h3>
-      <p id="lowCount">0</p>
-    </div>
-  </div>
+<h1>NovaBanq Cyber Threat Dashboard</h1>
+<div class="subtitle">Visualisation des vulnérabilités détectées</div>
 
-  <div class="section">
-    <h2>Répartition des criticités</h2>
-    <canvas id="threatChart"></canvas>
-  </div>
+<div>
 
-  <div class="section">
-    <h2>Top menaces détectées</h2>
-    <div id="articles"></div>
-  </div>
+<button class="btn-all" onclick="filterThreats('all')">Toutes</button>
 
-  <script>
-    function getCssClass(criticality) {
-      if (criticality === "Élevée") return "high";
-      if (criticality === "Moyenne") return "medium";
-      return "low";
-    }
+<button class="btn-critical" onclick="filterThreats('Critique')">
+Vulnérabilités critiques
+</button>
 
-    fetch("reports/report.json")
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Impossible de charger reports/report.json");
-        }
-        return response.json();
-      })
-      .then(data => {
-        let high = 0;
-        let medium = 0;
-        let low = 0;
+<button class="btn-high" onclick="filterThreats('Élevée')">
+Criticité élevée
+</button>
 
-        data.forEach(item => {
-          if (item.criticality === "Élevée") high++;
-          else if (item.criticality === "Moyenne") medium++;
-          else low++;
-        });
+<button class="btn-medium" onclick="filterThreats('Moyenne')">
+Criticité moyenne
+</button>
 
-        document.getElementById("totalCount").textContent = data.length;
-        document.getElementById("highCount").textContent = high;
-        document.getElementById("mediumCount").textContent = medium;
-        document.getElementById("lowCount").textContent = low;
+<button class="btn-low" onclick="filterThreats('Faible')">
+Criticité faible
+</button>
 
-        new Chart(document.getElementById("threatChart"), {
-          type: "bar",
-          data: {
-            labels: ["Élevée", "Moyenne", "Faible"],
-            datasets: [{
-              label: "Nombre de menaces",
-              data: [high, medium, low]
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                display: false
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  precision: 0
-                }
-              }
-            }
-          }
-        });
+</div>
 
-        const container = document.getElementById("articles");
+<br>
 
-        if (!data.length) {
-          container.innerHTML = `<div class="empty">Aucune menace détectée dans le rapport.</div>`;
-          return;
-        }
+<canvas id="chart"></canvas>
 
-        data.slice(0, 10).forEach(article => {
-          const cssClass = getCssClass(article.criticality);
-          const keywords = Array.isArray(article.keywords) ? article.keywords : [];
+<br>
 
-          const tagsHtml = keywords.map(keyword =>
-            `<span class="tag">${keyword}</span>`
-          ).join("");
+<div id="articles"></div>
 
-          container.innerHTML += `
-            <div class="card ${cssClass}">
-              <h3>${article.title || "Sans titre"}</h3>
-              <p><strong>Score :</strong> ${article.score ?? 0}</p>
-              <p class="criticality ${cssClass}">
-                <strong>Criticité :</strong> ${article.criticality || "Inconnue"}
-              </p>
-              <p><strong>Lien :</strong> <a href="${article.link}" target="_blank" rel="noopener noreferrer">Ouvrir l'article</a></p>
-              <div class="tag-list">
-                <strong>Mots-clés détectés :</strong><br>
-                ${tagsHtml || "<span class='tag'>Aucun</span>"}
-              </div>
-            </div>
-          `;
-        });
-      })
-      .catch(error => {
-        document.getElementById("articles").innerHTML = `
-          <div class="empty">
-            Erreur lors du chargement du dashboard : ${error.message}
-          </div>
-        `;
-      });
-  </script>
+<script>
+
+let allData=[]
+
+fetch("reports/report.json")
+.then(res=>res.json())
+.then(data=>{
+
+allData=data
+
+renderArticles(data)
+renderChart(data)
+
+})
+
+function filterThreats(level){
+
+if(level==="all"){
+renderArticles(allData)
+return
+}
+
+const filtered=allData.filter(a=>a.criticality===level)
+
+renderArticles(filtered)
+
+}
+
+function renderArticles(data){
+
+const container=document.getElementById("articles")
+container.innerHTML=""
+
+data.forEach(a=>{
+
+let css="low"
+
+if(a.criticality==="Critique") css="critique"
+if(a.criticality==="Élevée") css="high"
+if(a.criticality==="Moyenne") css="medium"
+
+container.innerHTML+=`
+
+<div class="card ${css}">
+
+<h3>${a.title}</h3>
+
+<p>
+<b>Score :</b> ${a.score}
+</p>
+
+<p>
+<b>Criticité :</b> ${a.criticality}
+</p>
+
+<p>
+<b>Catégorie :</b> ${a.category}
+</p>
+
+<p>
+<b>Mots clés :</b>
+${a.keywords.map(k=>`<span class="tag">${k}</span>`).join("")}
+</p>
+
+<p>
+<a href="${a.link}" target="_blank">
+Lire l'article
+</a>
+</p>
+
+</div>
+
+`
+
+})
+
+}
+
+function renderChart(data){
+
+let critical=0
+let high=0
+let medium=0
+let low=0
+
+data.forEach(a=>{
+
+if(a.criticality==="Critique") critical++
+if(a.criticality==="Élevée") high++
+if(a.criticality==="Moyenne") medium++
+if(a.criticality==="Faible") low++
+
+})
+
+new Chart(document.getElementById("chart"),{
+
+type:"bar",
+
+data:{
+labels:["Critique","Élevée","Moyenne","Faible"],
+datasets:[{
+label:"Vulnérabilités détectées",
+data:[critical,high,medium,low]
+}]
+}
+
+})
+
+}
+
+</script>
+
 </body>
 </html>

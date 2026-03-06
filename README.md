@@ -1,26 +1,124 @@
 # NovaBanq Cyber Threat Monitoring
 
-Pipeline de veille cybersécurité automatisée pour le projet NovaBanq.
+Pipeline de veille cybersécurité automatisée pour la surveillance des vulnérabilités critiques affectant l’écosystème bancaire et les infrastructures applicatives.
 
-Cette application collecte des flux RSS de cybersécurité, analyse les articles selon des mots-clés critiques, calcule un score de menace et affiche les résultats dans un dashboard web interactif.
+Le projet collecte des flux RSS spécialisés en cybersécurité, analyse les articles à l’aide de mots-clés pondérés, détecte les vulnérabilités critiques (RCE, Zero-Day, CVE, etc.), envoie des alertes email et affiche les résultats dans un dashboard web interactif.
+
+---
+
+# Fonctionnalités
+
+### Veille cybersécurité automatisée
+
+La pipeline :
+
+- collecte des flux RSS cybersécurité
+- analyse les articles
+- détecte les vulnérabilités critiques
+- calcule un score de menace
+- classe les menaces par criticité
+- envoie des alertes email
+- génère des rapports
+- alimente un dashboard web
+
+---
+
+# Surveillance continue
+
+La pipeline fonctionne en **mode surveillance continue**.
+
+Elle analyse les flux RSS toutes les 10 minutes 
+
+
+afin de détecter rapidement :
+
+- vulnérabilités critiques
+- exploits actifs
+- zero-day
+- attaques supply-chain
+
+---
+
+# Détection de vulnérabilités critiques
+
+Le moteur de détection priorise les vulnérabilités majeures comme :
+
+- Log4Shell
+- Spring4Shell
+- Remote Code Execution (RCE)
+- Zero-Day exploits
+- Critical CVE
+- Authentication bypass
+- Privilege escalation
+
+Les vulnérabilités sont classées selon leur criticité.
+
+| Score | Criticité |
+|------|------|
+| ≥12 | Critique |
+| ≥7 | Élevée |
+| ≥4 | Moyenne |
+| <4 | Faible |
+
+---
+
+# Alerting
+
+Lorsqu'une menace **Critique ou Élevée** est détectée :
+
+- une **alerte email est envoyée**
+- les alertes sont **dédupliquées**
+- un article ne génère **qu'une seule alerte**
+
+---
+
+# Dashboard Web
+
+Le dashboard permet de :
+
+- visualiser les menaces détectées
+- filtrer les vulnérabilités par criticité
+- afficher un graphique des menaces
+- consulter les articles sources
+- voir les mots-clés détectés
+
+Filtres disponibles :
+
+- Tout
+- Vulnérabilité critique
+- Criticité élevée
+- Criticité moyenne
+- Criticité faible
+
+Code couleur :
+
+| Niveau | Couleur |
+|------|------|
+| Critique | Rouge foncé |
+| Élevée | Rouge |
+| Moyenne | Orange |
+| Faible | Vert |
 
 ---
 
 # Architecture
 
-Le projet est composé de deux services Docker :
+Le projet utilise **Docker Compose** pour orchestrer deux services.
 
-1. **Pipeline de veille**
-   - collecte les flux RSS
-   - analyse les articles
-   - calcule un score de criticité
-   - génère un rapport JSON et Markdown
-
-2. **Dashboard Web**
-   - lit le rapport JSON
-   - affiche les menaces
-   - graphique de criticité
-   - code couleur selon le niveau de risque
+RSS feeds
+│
+▼
+Pipeline Python
+│
+├── scoring des menaces
+├── alerting email
+├── génération des rapports
+│
+▼
+reports/report.json
+│
+▼
+Dashboard Web
 
 ---
 
@@ -44,43 +142,11 @@ veille-novabanq/
 │
 ├── reports/
 │
-└── logs/
+├── logs/
+│
+├── .env
+└── README.md
 
-
----
-
-# Fonctionnement de la pipeline
-
-1. Lecture des sources RSS
-2. Analyse des articles
-3. Détection de mots-clés
-4. Calcul d'un score de menace
-5. Classification par criticité
-
-| Score | Criticité |
-|------|------|
-| 7+ | Élevée |
-| 4-6 | Moyenne |
-| 1-3 | Faible |
-
----
-
-# Dashboard
-
-Le dashboard web affiche :
-
-http://localhost:8080
-
-- graphique des menaces
-- liste des articles détectés
-- score de criticité
-- mots-clés détectés
-
-Code couleur :
-
-🔴 Élevée (rouge)
-🟠 Moyenne (orange)
-🟢 Faible (vert) 
 
 ---
 
@@ -91,7 +157,20 @@ Cloner le projet :
 ```bash
 git clone https://github.com/VOTRE_USER/veille-novabanq.git
 cd veille-novabanq
-docker compose up -d
 
+Créer un fichier .env :
 
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
 
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+
+ALERT_FROM=your_email@gmail.com
+ALERT_TO=your_email@gmail.com
+
+Lancer la pipeline : 
+
+Docker compose up -d 
+
+le Dashboard : http://localhost:8080 

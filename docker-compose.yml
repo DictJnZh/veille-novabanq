@@ -1,13 +1,19 @@
 services:
+
   veille:
     image: directjnzh/veille-novabanq:latest
     build: .
     container_name: veille-novabanq
+
+    env_file:
+      - .env
+
     volumes:
       - ./config:/app/config
       - ./scripts:/app/scripts
       - ./reports:/app/reports
       - ./logs:/app/logs
+
     restart: "no"
 
   dashboard:
@@ -15,9 +21,12 @@ services:
     container_name: veille-dashboard
     working_dir: /web
     command: python -m http.server 8080
+
     volumes:
       - ./web:/web
       - ./reports:/web/reports
+
     ports:
       - "8080:8080"
+
     restart: "no"
