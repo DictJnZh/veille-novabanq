@@ -1,214 +1,218 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-<meta charset="UTF-8">
-<title>NovaBanq Threat Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <title>NovaBanq Threat Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-<style>
+  <style>
+    body{
+      font-family: Arial;
+      background:#f5f6fa;
+      padding:40px;
+    }
 
-body{
-font-family: Arial;
-background:#f5f6fa;
-padding:40px;
-}
+    h1{
+      margin-bottom:10px;
+    }
 
-h1{
-margin-bottom:10px;
-}
+    .subtitle{
+      color:#666;
+      margin-bottom:25px;
+    }
 
-.subtitle{
-color:#666;
-margin-bottom:25px;
-}
+    button{
+      padding:10px 18px;
+      margin:5px;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:bold;
+    }
 
-button{
-padding:10px 18px;
-margin:5px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-weight:bold;
-}
+    .btn-all{background:#333;color:white;}
+    .btn-critical{background:#6a1b9a;color:white;}
+    .btn-high{background:#c62828;color:white;}
+    .btn-medium{background:#ef6c00;color:white;}
+    .btn-low{background:#2e7d32;color:white;}
 
-.btn-all{background:#333;color:white;}
-.btn-critical{background:#6a1b9a;color:white;}
-.btn-high{background:#c62828;color:white;}
-.btn-medium{background:#ef6c00;color:white;}
-.btn-low{background:#2e7d32;color:white;}
+    .card{
+      background:white;
+      padding:20px;
+      margin-bottom:20px;
+      border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+      border-left:6px solid #ddd;
+    }
 
-.card{
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:8px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-border-left:6px solid #ddd;
-}
+    .card.critique{border-left-color:#6a1b9a;}
+    .card.high{border-left-color:#c62828;}
+    .card.medium{border-left-color:#ef6c00;}
+    .card.low{border-left-color:#2e7d32;}
 
-.card.critique{border-left-color:#6a1b9a;}
-.card.high{border-left-color:#c62828;}
-.card.medium{border-left-color:#ef6c00;}
-.card.low{border-left-color:#2e7d32;}
+    .tag{
+      background:#eee;
+      padding:3px 8px;
+      margin-right:5px;
+      border-radius:12px;
+      font-size:12px;
+    }
 
-.tag{
-background:#eee;
-padding:3px 8px;
-margin-right:5px;
-border-radius:12px;
-font-size:12px;
-}
+    #chart{
+      max-width: 1000px;
+      height: 320px !important;
+    }
 
-</style>
+    .error{
+      color:#b00020;
+      background:#fff0f0;
+      padding:12px;
+      border-radius:8px;
+      margin:20px 0;
+    }
+  </style>
 </head>
 
 <body>
+  <h1>NovaBanq Cyber Threat Dashboard</h1>
+  <div class="subtitle">Visualisation des vulnérabilités détectées</div>
 
-<h1>NovaBanq Cyber Threat Dashboard</h1>
-<div class="subtitle">Visualisation des vulnérabilités détectées</div>
+  <div>
+    <button class="btn-all" onclick="filterThreats('all')">Toutes</button>
+    <button class="btn-critical" onclick="filterThreats('Critique')">Vulnérabilités critiques</button>
+    <button class="btn-high" onclick="filterThreats('Élevée')">Criticité élevée</button>
+    <button class="btn-medium" onclick="filterThreats('Moyenne')">Criticité moyenne</button>
+    <button class="btn-low" onclick="filterThreats('Faible')">Criticité faible</button>
+  </div>
 
-<div>
+  <br>
+  <canvas id="chart"></canvas>
+  <br>
 
-<button class="btn-all" onclick="filterThreats('all')">Toutes</button>
+  <div id="status"></div>
+  <div id="articles"></div>
 
-<button class="btn-critical" onclick="filterThreats('Critique')">
-Vulnérabilités critiques
-</button>
+  <script>
+    let allData = [];
+    let chartInstance = null;
 
-<button class="btn-high" onclick="filterThreats('Élevée')">
-Criticité élevée
-</button>
+    async function loadData() {
+      try {
+        const res = await fetch("reports/report.json", { cache: "no-store" });
 
-<button class="btn-medium" onclick="filterThreats('Moyenne')">
-Criticité moyenne
-</button>
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
 
-<button class="btn-low" onclick="filterThreats('Faible')">
-Criticité faible
-</button>
+        const data = await res.json();
 
-</div>
+        if (!Array.isArray(data)) {
+          throw new Error("Le JSON doit contenir un tableau.");
+        }
 
-<br>
+        allData = data;
+        console.log("Nombre d'entrées chargées :", allData.length);
+        document.getElementById("status").innerHTML =
+          `<p>${allData.length} vulnérabilité(s) chargée(s).</p>`;
 
-<canvas id="chart"></canvas>
+        renderArticles(allData);
+        renderChart(allData);
+      } catch (err) {
+        console.error("Erreur de chargement :", err);
+        document.getElementById("status").innerHTML =
+          `<div class="error"><b>Erreur :</b> ${err.message}</div>`;
+      }
+    }
 
-<br>
+    function filterThreats(level) {
+      if (level === "all") {
+        renderArticles(allData);
+        return;
+      }
 
-<div id="articles"></div>
+      const filtered = allData.filter(a => a && a.criticality === level);
+      renderArticles(filtered);
+    }
 
-<script>
+    function renderArticles(data) {
+      const container = document.getElementById("articles");
+      container.innerHTML = "";
 
-let allData=[]
+      if (!Array.isArray(data) || data.length === 0) {
+        container.innerHTML = "<p>Aucune vulnérabilité trouvée.</p>";
+        return;
+      }
 
-fetch("reports/report.json")
-.then(res=>res.json())
-.then(data=>{
+      data.forEach(a => {
+        let css = "low";
 
-allData=data
+        if (a.criticality === "Critique") css = "critique";
+        else if (a.criticality === "Élevée") css = "high";
+        else if (a.criticality === "Moyenne") css = "medium";
 
-renderArticles(data)
-renderChart(data)
+        const keywords = Array.isArray(a.keywords)
+          ? a.keywords.map(k => `<span class="tag">${k}</span>`).join("")
+          : "";
 
-})
+        container.innerHTML += `
+          <div class="card ${css}">
+            <h3>${a.title ?? "Sans titre"}</h3>
 
-function filterThreats(level){
+            <p><b>Score :</b> ${a.score ?? "N/A"}</p>
+            <p><b>Criticité :</b> ${a.criticality ?? "N/A"}</p>
+            <p><b>Catégorie :</b> ${a.category ?? "N/A"}</p>
 
-if(level==="all"){
-renderArticles(allData)
-return
-}
+            <p><b>Mots clés :</b> ${keywords}</p>
 
-const filtered=allData.filter(a=>a.criticality===level)
+            <p>
+              ${a.link ? `<a href="${a.link}" target="_blank" rel="noopener noreferrer">Lire l'article</a>` : ""}
+            </p>
+          </div>
+        `;
+      });
+    }
 
-renderArticles(filtered)
+    function renderChart(data) {
+      let critical = 0;
+      let high = 0;
+      let medium = 0;
+      let low = 0;
 
-}
+      data.forEach(a => {
+        if (a.criticality === "Critique") critical++;
+        else if (a.criticality === "Élevée") high++;
+        else if (a.criticality === "Moyenne") medium++;
+        else if (a.criticality === "Faible") low++;
+      });
 
-function renderArticles(data){
+      const canvas = document.getElementById("chart");
+      const ctx = canvas.getContext("2d");
 
-const container=document.getElementById("articles")
-container.innerHTML=""
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
 
-data.forEach(a=>{
+      if (typeof Chart === "undefined") {
+        throw new Error("Chart.js n'est pas chargé.");
+      }
 
-let css="low"
+      chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ["Critique", "Élevée", "Moyenne", "Faible"],
+          datasets: [{
+            label: "Vulnérabilités détectées",
+            data: [critical, high, medium, low]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
 
-if(a.criticality==="Critique") css="critique"
-if(a.criticality==="Élevée") css="high"
-if(a.criticality==="Moyenne") css="medium"
-
-container.innerHTML+=`
-
-<div class="card ${css}">
-
-<h3>${a.title}</h3>
-
-<p>
-<b>Score :</b> ${a.score}
-</p>
-
-<p>
-<b>Criticité :</b> ${a.criticality}
-</p>
-
-<p>
-<b>Catégorie :</b> ${a.category}
-</p>
-
-<p>
-<b>Mots clés :</b>
-${a.keywords.map(k=>`<span class="tag">${k}</span>`).join("")}
-</p>
-
-<p>
-<a href="${a.link}" target="_blank">
-Lire l'article
-</a>
-</p>
-
-</div>
-
-`
-
-})
-
-}
-
-function renderChart(data){
-
-let critical=0
-let high=0
-let medium=0
-let low=0
-
-data.forEach(a=>{
-
-if(a.criticality==="Critique") critical++
-if(a.criticality==="Élevée") high++
-if(a.criticality==="Moyenne") medium++
-if(a.criticality==="Faible") low++
-
-})
-
-new Chart(document.getElementById("chart"),{
-
-type:"bar",
-
-data:{
-labels:["Critique","Élevée","Moyenne","Faible"],
-datasets:[{
-label:"Vulnérabilités détectées",
-data:[critical,high,medium,low]
-}]
-}
-
-})
-
-}
-
-</script>
-
+    loadData();
+  </script>
 </body>
 </html>
